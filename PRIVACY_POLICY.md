@@ -1,8 +1,8 @@
 # Privacy Policy — Ginti
 
 **Effective date:** 28 June 2026
-**App:** Ginti (package `com.trackerexpo.app`)
-**Developer contact:** edusystempro2@gmail.com
+**App:** Ginti (package `cloud.firstanchor.ginti`)
+**Developer contact:** hgupta427700@gmail.com
 
 ## Summary
 Ginti is a **local-first, offline** expense tracker. All of your data stays **on your device**.
@@ -47,4 +47,4 @@ If this policy changes, the updated version will be published at the same URL wi
 date.
 
 ## Contact
-Questions? Email **edusystempro2@gmail.com**.
+Questions? Email **hgupta427700@gmail.com**.

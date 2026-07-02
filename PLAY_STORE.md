@@ -33,13 +33,13 @@ Upgrading the SDK is the cleaner, supported path. Don't ship until the target is
 | Field | Value |
 |---|---|
 | App name | **Ginti** |
-| Package / Application ID | `com.trackerexpo.app` |
+| Package / Application ID | `cloud.firstanchor.ginti` |
 | Version name | `1.0.0` |
 | Version code | `1` (EAS auto-increments on each production build) |
 | Category | **Finance** |
 | Default language | English (US) |
 
-> The application ID can't change after first upload. `com.trackerexpo.app` is fine to keep.
+> The application ID can't change after first upload. `cloud.firstanchor.ginti` is fine to keep.
 
 ## 2. Build a Play-ready AAB ✅ (config) / 🔴 (run it)
 Play requires an **Android App Bundle (.aab)** — already set as the `production` profile.

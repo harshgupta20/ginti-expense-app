@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Ginti",
-    "slug": "tracker-expo",
+    "slug": "cloud.firstanchor.ginti",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,14 +17,14 @@
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.trackerexpo.app"
+      "bundleIdentifier": "cloud.firstanchor.ginti"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#6C63FF"
       },
-      "package": "com.trackerexpo.app",
+      "package": "cloud.firstanchor.ginti",
       "versionCode": 1,
       "permissions": [
         "VIBRATE",
