@@ -22,6 +22,7 @@ import { useTransactionStore } from '../src/stores/transactionStore';
 import { useConfigStore } from '../src/stores/configStore';
 import { useSubscriptionStore } from '../src/stores/subscriptionStore';
 import { processDueSubscriptions } from '../src/services/subscriptions';
+import { currencySymbol } from '../src/utils/currency';
 import { Category, TransactionType, BillingCycle } from '../src/types';
 import dayjs from 'dayjs';
 
@@ -40,11 +41,13 @@ const CYCLES: { key: BillingCycle; label: string }[] = [
 
 function formatAmount(amount: string): string {
   const n = parseFloat(amount.replace(/,/g, ''));
-  return isNaN(n) ? '₹0' : `₹${n.toFixed(0)}`;
+  const sym = currencySymbol();
+  return isNaN(n) ? `${sym}0` : `${sym}${n.toFixed(0)}`;
 }
 function formatPerMonth(amount: string): string {
   const n = parseFloat(amount.replace(/,/g, ''));
-  return isNaN(n) ? '₹0' : `₹${(n / 12).toFixed(0)}`;
+  const sym = currencySymbol();
+  return isNaN(n) ? `${sym}0` : `${sym}${(n / 12).toFixed(0)}`;
 }
 
 export default function AddTransactionScreen() {
@@ -151,7 +154,7 @@ export default function AddTransactionScreen() {
       >
         {/* Amount */}
         <Card style={styles.amountCard}>
-          <Text style={styles.currencySymbol}>₹</Text>
+          <Text style={styles.currencySymbol}>{currencySymbol()}</Text>
           <TextInput
             style={styles.amountInput}
             placeholder="0.00"

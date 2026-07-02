@@ -22,6 +22,7 @@ import { CategoryIcon } from '../../src/components/CategoryIcon';
 import { useSubscriptionStore } from '../../src/stores/subscriptionStore';
 import { monthlyCharge } from '../../src/services/subscriptions';
 import { formatCurrency } from '../../src/utils/formatters';
+import { currencySymbol } from '../../src/utils/currency';
 import { Subscription, BillingCycle } from '../../src/types';
 import dayjs from 'dayjs';
 
@@ -180,7 +181,7 @@ export default function SubscriptionsScreen() {
               Amount ({cycle === 'daily' ? 'per day' : cycle === 'weekly' ? 'per week' : cycle === 'yearly' ? 'per year' : 'per month'})
             </Text>
             <View style={styles.amountInput}>
-              <Text style={styles.currency}>₹</Text>
+              <Text style={styles.currency}>{currencySymbol()}</Text>
               <TextInput
                 style={styles.input}
                 value={amountInput}

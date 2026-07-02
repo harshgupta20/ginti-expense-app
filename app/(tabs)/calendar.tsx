@@ -12,13 +12,6 @@ import { formatCurrency, formatDate } from '../../src/utils/formatters';
 import { startOfDay, endOfDay, startOfMonth, endOfMonth } from '../../src/utils/dateUtils';
 import dayjs from 'dayjs';
 
-/** Compact amount for the calendar cell, e.g. 1.2k, 450. */
-function compactAmount(amount: number): string {
-  if (amount >= 100000) return `${(amount / 100000).toFixed(1)}L`;
-  if (amount >= 1000) return `${(amount / 1000).toFixed(amount >= 10000 ? 0 : 1)}k`;
-  return `${Math.round(amount)}`;
-}
-
 interface DayCellProps {
   date?: DateData;
   state?: string;
@@ -53,7 +46,7 @@ function DayCell({ date, state, amount, isSelected, onPress }: DayCellProps) {
       </View>
       {amount > 0 ? (
         <Text style={[styles.dayAmount, isSelected && styles.dayAmountSelected]} numberOfLines={1}>
-          ₹{compactAmount(amount)}
+          {formatCurrency(amount, true)}
         </Text>
       ) : (
         <Text style={styles.dayAmount}> </Text>

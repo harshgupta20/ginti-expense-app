@@ -14,6 +14,8 @@ import { Colors } from '../../src/constants/colors';
 import { Card } from '../../src/components/ui/Card';
 import { LoadingSpinner } from '../../src/components/ui/LoadingSpinner';
 import { Wordmark } from '../../src/components/Wordmark';
+import { CountryPickerModal } from '../../src/components/CountryPickerModal';
+import { getCountry, getCurrency } from '../../src/constants/currencies';
 import { shareExportedCSV } from '../../src/services/exportService';
 import { clearAllData } from '../../src/db/database';
 import { useTransactionStore } from '../../src/stores/transactionStore';
@@ -53,11 +55,16 @@ function fmtHour(h: number): string {
 export default function SettingsScreen() {
   const router = useRouter();
   const [isExporting, setIsExporting] = useState(false);
+  const [countryPicker, setCountryPicker] = useState(false);
   const fetchDashboard = useTransactionStore((s) => s.fetchDashboardData);
   const fetchRecent = useTransactionStore((s) => s.fetchRecentTransactions);
 
   const settings = useSettingsStore((s) => s.settings);
   const updateSetting = useSettingsStore((s) => s.updateSetting);
+  const setCountry = useSettingsStore((s) => s.setCountry);
+
+  const country = getCountry(settings.country);
+  const currency = getCurrency(settings.currency);
 
   const toggleReminders = async (value: boolean) => {
     if (value) {
@@ -108,6 +115,20 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Region */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Region</Text>
+        <Card padding={0}>
+          <SettingRow
+            icon="earth-outline"
+            label="Country & Currency"
+            description={`${country?.flag ?? '🌍'}  ${country?.name ?? 'Not set'} · ${currency.code} ${currency.symbol}`}
+            onPress={() => setCountryPicker(true)}
+            iconColor={Colors.info}
+          />
+        </Card>
+      </View>
+
       {/* Reminders */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Reminders</Text>
@@ -190,6 +211,13 @@ export default function SettingsScreen() {
         </View>
         <Text style={styles.appVersion}>Version 1.0.0</Text>
       </View>
+
+      <CountryPickerModal
+        visible={countryPicker}
+        selectedCode={settings.country}
+        onSelect={(code) => setCountry(code)}
+        onClose={() => setCountryPicker(false)}
+      />
     </ScrollView>
   );
 }

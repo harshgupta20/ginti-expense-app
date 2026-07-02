@@ -1,15 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../src/constants/colors';
 import { Button } from '../src/components/ui/Button';
 import { ProgressBar } from '../src/components/ui/ProgressBar';
 import { Wordmark } from '../src/components/Wordmark';
+import { CountryPickerModal } from '../src/components/CountryPickerModal';
 import { useSettingsStore } from '../src/stores/settingsStore';
+import { DEFAULT_COUNTRY, getCountry, getCurrency } from '../src/constants/currencies';
 
-// Each screen locks "Next" for this many seconds — a deliberate, unskippable
-// read so the value proposition actually lands.
+// Each reading screen locks "Next" for this many seconds — a deliberate,
+// unskippable read so the value proposition actually lands.
 const GATE_SECONDS = 4;
 
 interface Slide {
@@ -28,7 +30,7 @@ const SLIDES: Slide[] = [
     brand: true,
     title: 'Welcome to Ginti',
     description:
-      'The calm, private way to track every rupee. Log spends in seconds and always know where your money goes.',
+      'The calm, private way to track every rupee, dollar or euro. Log spends in seconds and always know where your money goes.',
   },
   {
     icon: 'shield-checkmark',
@@ -67,21 +69,30 @@ const SLIDES: Slide[] = [
   },
 ];
 
+const TOTAL_STEPS = SLIDES.length + 1; // + country step
+
 export default function Onboarding() {
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [remaining, setRemaining] = useState(GATE_SECONDS);
+  const [country, setCountrySel] = useState(DEFAULT_COUNTRY);
+  const [pickerVisible, setPickerVisible] = useState(false);
   const completeOnboarding = useSettingsStore((s) => s.completeOnboarding);
+  const setCountry = useSettingsStore((s) => s.setCountry);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const isCountryStep = index === SLIDES.length;
   const slide = SLIDES[index];
-  const isLast = index === SLIDES.length - 1;
-  const locked = remaining > 0;
+  const locked = !isCountryStep && remaining > 0;
 
-  // Restart the read-gate countdown whenever the visible slide changes.
+  // Read-gate countdown — only on the reading slides, not the country step.
   useEffect(() => {
-    setRemaining(GATE_SECONDS);
     if (timer.current) clearInterval(timer.current);
+    if (isCountryStep) {
+      setRemaining(0);
+      return;
+    }
+    setRemaining(GATE_SECONDS);
     timer.current = setInterval(() => {
       setRemaining((r) => {
         const next = Math.max(0, Math.round((r - 0.1) * 10) / 10);
@@ -92,11 +103,12 @@ export default function Onboarding() {
     return () => {
       if (timer.current) clearInterval(timer.current);
     };
-  }, [index]);
+  }, [index, isCountryStep]);
 
   const handleNext = async () => {
     if (locked) return;
-    if (isLast) {
+    if (isCountryStep) {
+      await setCountry(country);
       await completeOnboarding();
       router.replace('/permission');
     } else {
@@ -105,58 +117,95 @@ export default function Onboarding() {
   };
 
   const progress = ((GATE_SECONDS - remaining) / GATE_SECONDS) * 100;
+  const selectedCountry = getCountry(country);
+  const selectedCurrency = selectedCountry ? getCurrency(selectedCountry.currency) : getCurrency('USD');
 
   return (
     <View style={styles.container}>
       <View style={styles.top}>
         <Wordmark size="sm" />
-        <Text style={styles.step}>{index + 1} / {SLIDES.length}</Text>
+        <Text style={styles.step}>{index + 1} / {TOTAL_STEPS}</Text>
       </View>
 
-      <View style={styles.slide}>
-        <View style={[styles.iconCircle, { backgroundColor: `${slide.iconColor}22` }]}>
-          <Ionicons name={slide.icon} size={60} color={slide.iconColor} />
+      {isCountryStep ? (
+        <View style={styles.slide}>
+          <View style={[styles.iconCircle, { backgroundColor: `${Colors.primary}22` }]}>
+            <Ionicons name="globe" size={60} color={Colors.primary} />
+          </View>
+          <Text style={styles.title}>Where are you?</Text>
+          <Text style={styles.description}>
+            Pick your country so Ginti shows amounts in your currency. You can change this anytime in Settings.
+          </Text>
+
+          <TouchableOpacity style={styles.countrySelector} onPress={() => setPickerVisible(true)} activeOpacity={0.8}>
+            <Text style={styles.countryFlag}>{selectedCountry?.flag ?? '🌍'}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.countryName}>{selectedCountry?.name ?? 'Select country'}</Text>
+              <Text style={styles.countryCurrency}>
+                {selectedCurrency.code} · {selectedCurrency.symbol}
+              </Text>
+            </View>
+            <Ionicons name="chevron-down" size={20} color={Colors.textMuted} />
+          </TouchableOpacity>
+
+          <View style={styles.previewChip}>
+            <Text style={styles.previewText}>
+              Example: {selectedCurrency.symbol}1,250 spent this week
+            </Text>
+          </View>
         </View>
-
-        {slide.brand ? (
-          <View style={styles.brandRow}>
-            <Wordmark size="lg" />
+      ) : (
+        <View style={styles.slide}>
+          <View style={[styles.iconCircle, { backgroundColor: `${slide.iconColor}22` }]}>
+            <Ionicons name={slide.icon} size={60} color={slide.iconColor} />
           </View>
-        ) : null}
 
-        <Text style={styles.title}>{slide.title}</Text>
-        <Text style={styles.description}>{slide.description}</Text>
+          {slide.brand ? (
+            <View style={styles.brandRow}>
+              <Wordmark size="lg" />
+            </View>
+          ) : null}
 
-        {slide.bullets && (
-          <View style={styles.bullets}>
-            {slide.bullets.map((b) => (
-              <View key={b} style={styles.bulletRow}>
-                <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
-                <Text style={styles.bulletText}>{b}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
+          <Text style={styles.title}>{slide.title}</Text>
+          <Text style={styles.description}>{slide.description}</Text>
+
+          {slide.bullets && (
+            <View style={styles.bullets}>
+              {slide.bullets.map((b) => (
+                <View key={b} style={styles.bulletRow}>
+                  <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+                  <Text style={styles.bulletText}>{b}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
 
       <View style={styles.footer}>
         <View style={styles.dots}>
-          {SLIDES.map((_, i) => (
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
             <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
           ))}
         </View>
 
-        {/* Read-gate progress */}
         {locked && <ProgressBar percentage={progress} color={Colors.primary} height={4} />}
 
         <Button
-          label={locked ? `Please read… ${Math.ceil(remaining)}` : isLast ? 'Get Started' : 'Next'}
+          label={locked ? `Please read… ${Math.ceil(remaining)}` : isCountryStep ? 'Get Started' : 'Next'}
           onPress={handleNext}
           disabled={locked}
           size="lg"
           fullWidth
         />
       </View>
+
+      <CountryPickerModal
+        visible={pickerVisible}
+        selectedCode={country}
+        onSelect={setCountrySel}
+        onClose={() => setPickerVisible(false)}
+      />
     </View>
   );
 }
@@ -204,6 +253,29 @@ const styles = StyleSheet.create({
   bullets: { alignSelf: 'stretch', gap: 12, marginTop: 4 },
   bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   bulletText: { flex: 1, fontSize: 15, color: Colors.textPrimary, lineHeight: 20 },
+
+  countrySelector: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+    marginTop: 4,
+  },
+  countryFlag: { fontSize: 30 },
+  countryName: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
+  countryCurrency: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  previewChip: {
+    backgroundColor: Colors.primaryDim,
+    borderRadius: 100,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  previewText: { fontSize: 13, color: Colors.primaryLight, fontWeight: '600' },
 
   footer: {
     padding: 24,

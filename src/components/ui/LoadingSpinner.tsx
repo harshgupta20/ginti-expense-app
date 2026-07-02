@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, Animated, Easing } from 'react-native';
 import { Colors } from '../../constants/colors';
+import { currencySymbol } from '../../utils/currency';
 
 interface LoadingSpinnerProps {
   label?: string;
@@ -18,7 +19,7 @@ function groupIN(n: number): string {
 }
 
 /**
- * A flipping ₹ coin over a small coin stack, with a number that rapidly "counts"
+ * A flipping currency coin over a small coin stack, with a number that rapidly "counts"
  * money — an on-brand loader for Ginti (ginti = count).
  */
 export function LoadingSpinner({ label, size = 'large', fullScreen }: LoadingSpinnerProps) {
@@ -79,7 +80,9 @@ export function LoadingSpinner({ label, size = 'large', fullScreen }: LoadingSpi
           },
         ]}
       >
-        <Text style={[styles.rupee, { fontSize: coin * 0.5 }]}>₹</Text>
+        <Text style={[styles.rupee, { fontSize: coin * 0.5 }]} numberOfLines={1} adjustsFontSizeToFit>
+          {currencySymbol()}
+        </Text>
       </Animated.View>
     </View>
   );
@@ -91,7 +94,7 @@ export function LoadingSpinner({ label, size = 'large', fullScreen }: LoadingSpi
   return (
     <View style={[styles.container, fullScreen && styles.fullScreen]}>
       {Coin}
-      <Text style={styles.counter}>₹{groupIN(count)}</Text>
+      <Text style={styles.counter}>{currencySymbol()}{groupIN(count)}</Text>
       <Text style={styles.label}>{label ?? 'Counting…'}</Text>
     </View>
   );

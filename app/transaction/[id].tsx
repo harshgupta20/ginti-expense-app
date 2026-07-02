@@ -22,7 +22,8 @@ import { Badge } from '../../src/components/ui/Badge';
 import { Button } from '../../src/components/ui/Button';
 import { Card } from '../../src/components/ui/Card';
 import { LoadingSpinner } from '../../src/components/ui/LoadingSpinner';
-import { formatDate, formatTime } from '../../src/utils/formatters';
+import { formatDate, formatTime, formatCurrency } from '../../src/utils/formatters';
+import { currencySymbol } from '../../src/utils/currency';
 
 export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -134,7 +135,7 @@ export default function TransactionDetailScreen() {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>Amount</Text>
             <View style={styles.amountRow}>
-              <Text style={styles.currency}>₹</Text>
+              <Text style={styles.currency}>{currencySymbol()}</Text>
               <TextInput
                 style={[styles.fieldInput, { flex: 1 }]}
                 value={editAmount}
@@ -170,7 +171,7 @@ export default function TransactionDetailScreen() {
 
           {[
             { label: 'Name', value: tx.normalized_merchant_name || tx.merchant_name || '—' },
-            { label: 'Amount', value: `₹${tx.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` },
+            { label: 'Amount', value: formatCurrency(tx.amount) },
             { label: 'Category', value: tx.category },
             { label: 'Type', value: tx.transaction_type.charAt(0).toUpperCase() + tx.transaction_type.slice(1) },
             { label: 'Date', value: `${formatDate(tx.transaction_timestamp)} · ${formatTime(tx.transaction_timestamp)}` },

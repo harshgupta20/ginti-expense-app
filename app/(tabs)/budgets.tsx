@@ -21,6 +21,7 @@ import { BudgetCard } from '../../src/components/BudgetCard';
 import { Button } from '../../src/components/ui/Button';
 import { EmptyState } from '../../src/components/ui/EmptyState';
 import { formatCurrency } from '../../src/utils/formatters';
+import { currencySymbol } from '../../src/utils/currency';
 import dayjs from 'dayjs';
 
 type Target = { kind: 'overall' } | { kind: 'category'; category: string };
@@ -251,7 +252,7 @@ export default function BudgetsScreen() {
 
             <Text style={styles.label}>Monthly Limit</Text>
             <View style={styles.amountInput}>
-              <Text style={styles.currencySymbol}>₹</Text>
+              <Text style={styles.currencySymbol}>{currencySymbol()}</Text>
               <TextInput
                 style={styles.input}
                 value={limitInput}

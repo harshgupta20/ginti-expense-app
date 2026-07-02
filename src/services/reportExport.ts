@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 import dayjs from 'dayjs';
 import { getTransactionsByDateRange, getAllMembers } from '../db/database';
 import { Transaction } from '../types';
+import { currencySymbol } from '../utils/currency';
 
 export type ReportFormat = 'csv' | 'html';
 
@@ -18,7 +19,15 @@ function escapeHTML(str: string): string {
   );
 }
 
-const COLUMNS = ['Date', 'Description', 'Category', 'Type', 'Paid via', 'Paid by', 'Amount (₹)'];
+const columns = (): string[] => [
+  'Date',
+  'Description',
+  'Category',
+  'Type',
+  'Paid via',
+  'Paid by',
+  `Amount (${currencySymbol()})`,
+];
 
 function rowValues(tx: Transaction, memberName: (id: number | null) => string | null): (string | number)[] {
   return [
@@ -33,11 +42,11 @@ function rowValues(tx: Transaction, memberName: (id: number | null) => string | 
 }
 
 function buildCSV(rows: (string | number)[][]): string {
-  return [COLUMNS.join(','), ...rows.map((r) => r.map(escapeCSV).join(','))].join('\n');
+  return [columns().join(','), ...rows.map((r) => r.map(escapeCSV).join(','))].join('\n');
 }
 
 function buildHTML(rows: (string | number)[][], title: string, total: number): string {
-  const head = COLUMNS.map((c) => `<th>${escapeHTML(c)}</th>`).join('');
+  const head = columns().map((c) => `<th>${escapeHTML(c)}</th>`).join('');
   const body = rows
     .map(
       (r) =>
@@ -57,7 +66,7 @@ function buildHTML(rows: (string | number)[][], title: string, total: number): s
 <h1>Ginti — Expense Report</h1>
 <div class="sub">${escapeHTML(title)} · ${rows.length} transactions</div>
 <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody>
-<tfoot><tr><td colspan="6">Total</td><td class="num">₹${total.toFixed(2)}</td></tr></tfoot>
+<tfoot><tr><td colspan="6">Total</td><td class="num">${currencySymbol()}${total.toFixed(2)}</td></tr></tfoot>
 </table></body></html>`;
 }
 

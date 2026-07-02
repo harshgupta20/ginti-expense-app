@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import dayjs from 'dayjs';
 import { getEffectiveBudgets, getCategoryBreakdown } from '../db/database';
+import { formatCurrency } from '../utils/formatters';
 
 // Note: the global notification handler is registered once in services/notifications.ts.
 
@@ -53,8 +54,8 @@ async function sendBudgetAlert(
   const pct = Math.round((spent / limit) * 100);
   const message =
     threshold >= 100
-      ? `You've exceeded your ${category} budget (₹${spent.toFixed(0)} / ₹${limit.toFixed(0)})`
-      : `You've used ${pct}% of your ${category} budget (₹${spent.toFixed(0)} / ₹${limit.toFixed(0)})`;
+      ? `You've exceeded your ${category} budget (${formatCurrency(spent)} / ${formatCurrency(limit)})`
+      : `You've used ${pct}% of your ${category} budget (${formatCurrency(spent)} / ${formatCurrency(limit)})`;
 
   await Notifications.scheduleNotificationAsync({
     content: {

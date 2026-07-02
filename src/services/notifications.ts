@@ -65,7 +65,7 @@ function recapContent(spent: number, isToday: boolean): { title: string; body: s
   if (isToday) {
     return spent > 0
       ? { title: '🌙 today\'s damage', body: `You logged ${formatCurrency(spent)} today. Anything missing? Add it before bed.` }
-      : { title: '🌙 no spends logged today', body: 'A ₹0 day or did something slip? Tap to log it real quick.' };
+      : { title: '🌙 no spends logged today', body: `A ${formatCurrency(0)} day or did something slip? Tap to log it real quick.` };
   }
   return {
     title: '🌙 day\'s a wrap',

@@ -1,14 +1,12 @@
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { formatMoney } from './currency';
 
 dayjs.extend(relativeTime);
 
+/** Formats an amount in the user's active currency (see src/utils/currency.ts). */
 export function formatCurrency(amount: number, compact = false): string {
-  if (compact) {
-    if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
-    if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`;
-  }
-  return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  return formatMoney(amount, compact);
 }
 
 export function formatDate(iso: string, format = 'DD MMM YYYY'): string {
