@@ -7,6 +7,7 @@ import { StyleSheet } from 'react-native';
 import { initDatabase } from '../src/db/database';
 import { useSettingsStore } from '../src/stores/settingsStore';
 import { useConfigStore } from '../src/stores/configStore';
+import { checkForUpdatesInBackground } from '../src/services/otaUpdates';
 import { Colors } from '../src/constants/colors';
 
 SplashScreen.preventAutoHideAsync();
@@ -25,6 +26,10 @@ export default function RootLayout() {
         console.error('Init error:', e);
       } finally {
         SplashScreen.hideAsync();
+        // Fire-and-forget: check for OTA updates AFTER the app is up. Not
+        // awaited, so it can never delay startup; all failures are handled
+        // inside the service. A staged update applies on the next cold launch.
+        void checkForUpdatesInBackground();
       }
     }
     init();

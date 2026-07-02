@@ -3,6 +3,15 @@
     "name": "Ginti",
     "slug": "cloudfirstanchorginti",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/539a3f82-120c-407d-96ae-da6caba6d576",
+      "enabled": true,
+      "checkAutomatically": "NEVER",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "ginti",
@@ -45,6 +54,15 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#6C63FF"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "targetSdkVersion": 35,
+            "compileSdkVersion": 35
+          }
         }
       ]
     ],
