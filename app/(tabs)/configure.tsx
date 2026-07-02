@@ -9,7 +9,6 @@ import { useSubscriptionStore } from '../../src/stores/subscriptionStore';
 import { useTransactionStore } from '../../src/stores/transactionStore';
 import { useBudgetStore } from '../../src/stores/budgetStore';
 import { exportBackup, importBackup } from '../../src/services/backupService';
-import { loadMerchantAliasCache } from '../../src/services/merchantAlias';
 
 interface RowProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -84,7 +83,7 @@ export default function ConfigureScreen() {
                 return;
               }
               // Reload everything from the freshly restored database.
-              await Promise.all([load(), loadSubs(), loadMerchantAliasCache()]);
+              await Promise.all([load(), loadSubs()]);
               await Promise.all([
                 useTransactionStore.getState().fetchDashboardData(),
                 useTransactionStore.getState().fetchRecentTransactions(),
@@ -139,18 +138,10 @@ export default function ConfigureScreen() {
         <ConfigRow
           icon="repeat"
           label="Subscriptions"
-          description="Recurring monthly & yearly charges"
+          description="Recurring daily, weekly, monthly & yearly charges"
           count={activeSubs}
           color="#A855F7"
           onPress={() => router.push('/configure/subscriptions')}
-        />
-        <View style={styles.divider} />
-        <ConfigRow
-          icon="storefront"
-          label="Merchant Tags"
-          description="Normalize merchant names"
-          color="#F59E0B"
-          onPress={() => router.push('/settings/merchant-aliases')}
         />
       </Card>
 
@@ -178,7 +169,7 @@ export default function ConfigureScreen() {
         <ConfigRow
           icon="document-text"
           label="Export Report"
-          description="Records by month/year as CSV or table"
+          description="Filter by date, month, year or category — CSV or table"
           color="#06B6D4"
           onPress={() => router.push('/configure/export-report')}
         />

@@ -77,7 +77,7 @@ export interface Transaction {
   subscription_id: number | null;
 }
 
-export type BillingCycle = 'monthly' | 'yearly';
+export type BillingCycle = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface Subscription {
   id: number;
@@ -87,7 +87,9 @@ export interface Subscription {
   category: string;
   payment_source: string | null;
   paid_by_member_id: number | null;
-  day_of_month: number; // anchor day 1–28
+  // For monthly/yearly this is the anchor day 1–28. Unused for daily; for weekly
+  // the recurrence is anchored to the subscription's start date (see created_at).
+  day_of_month: number;
   start_month: string; // 'YYYY-MM'
   active: 0 | 1;
   created_at: string;
@@ -137,7 +139,6 @@ export interface DashboardStats {
   monthSpend: number;
   avgDailySpend: number;
   topCategory: Category | null;
-  topMerchant: string | null;
 }
 
 export interface CategoryBreakdown {
@@ -183,6 +184,28 @@ export interface WeeklyData {
   date: string;
   amount: number;
   label: string;
+}
+
+export interface PaymentSourceStat {
+  source: string;
+  amount: number;
+  count: number;
+}
+
+export interface WeekdaySpend {
+  weekday: number; // 0 = Sunday … 6 = Saturday
+  amount: number;
+  count: number;
+}
+
+// Aggregate money movement for an analytics period.
+export interface PeriodTotals {
+  expense: number;
+  income: number;
+  transfer: number;
+  count: number; // number of expense transactions
+  avgExpense: number;
+  biggestExpense: { amount: number; name: string; date: string } | null;
 }
 
 export interface MonthlyData {

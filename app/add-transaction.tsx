@@ -11,11 +11,12 @@ import {
   Platform,
   Switch,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../src/constants/colors';
 import { Card } from '../src/components/ui/Card';
 import { Button } from '../src/components/ui/Button';
+import { DatePickerModal } from '../src/components/DatePickerModal';
 import { insertTransaction } from '../src/db/database';
 import { useTransactionStore } from '../src/stores/transactionStore';
 import { useConfigStore } from '../src/stores/configStore';
@@ -30,6 +31,13 @@ const TYPES: { key: TransactionType; label: string; color: string }[] = [
   { key: 'transfer', label: 'Transfer', color: Colors.transfer },
 ];
 
+const CYCLES: { key: BillingCycle; label: string }[] = [
+  { key: 'daily', label: 'Daily' },
+  { key: 'weekly', label: 'Weekly' },
+  { key: 'monthly', label: 'Monthly' },
+  { key: 'yearly', label: 'Yearly' },
+];
+
 function formatAmount(amount: string): string {
   const n = parseFloat(amount.replace(/,/g, ''));
   return isNaN(n) ? '₹0' : `₹${n.toFixed(0)}`;
@@ -41,6 +49,7 @@ function formatPerMonth(amount: string): string {
 
 export default function AddTransactionScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ date?: string }>();
   const fetchDashboard = useTransactionStore((s) => s.fetchDashboardData);
   const fetchRecent = useTransactionStore((s) => s.fetchRecentTransactions);
   const categories = useConfigStore((s) => s.categories);
@@ -54,10 +63,24 @@ export default function AddTransactionScreen() {
   const [note, setNote] = useState('');
   const [paymentSource, setPaymentSource] = useState<string | null>(null);
   const [paidByMemberId, setPaidByMemberId] = useState<number | null>(null);
+  // Transaction date — defaults to today, or a date passed from the calendar.
+  const [date, setDate] = useState<string>(() => {
+    const d = params.date ? dayjs(params.date) : dayjs();
+    return d.isValid() ? d.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
+  });
+  const [dateModal, setDateModal] = useState(false);
   const [recurring, setRecurring] = useState(false);
   const [cycle, setCycle] = useState<BillingCycle>('monthly');
   const [dayOfMonth, setDayOfMonth] = useState(Math.min(dayjs().date(), 28));
   const [isSaving, setIsSaving] = useState(false);
+
+  const isToday = date === dayjs().format('YYYY-MM-DD');
+  // Keep the current wall-clock time when logging for today; otherwise anchor at
+  // local noon so the entry lands squarely on the chosen calendar day.
+  const timestampFor = (d: string): string =>
+    d === dayjs().format('YYYY-MM-DD')
+      ? dayjs().toISOString()
+      : dayjs(`${d}T12:00:00`).toISOString();
 
   const handleSave = async () => {
     const parsedAmount = parseFloat(amount.replace(/,/g, ''));
@@ -73,8 +96,9 @@ export default function AddTransactionScreen() {
     setIsSaving(true);
     try {
       if (recurring && type === 'expense') {
-        // Create a subscription and let the processor generate the due charges
-        // (including this month's), so it stays in sync going forward.
+        // Create a subscription and let the processor generate the due charges,
+        // so it stays in sync going forward. Daily/weekly charge forward-only
+        // from creation; monthly/yearly backfill from the chosen start month.
         await addSubscription({
           name: label,
           amount: parsedAmount,
@@ -83,7 +107,7 @@ export default function AddTransactionScreen() {
           payment_source: paymentSource,
           paid_by_member_id: paidByMemberId,
           day_of_month: dayOfMonth,
-          start_month: dayjs().format('YYYY-MM'),
+          start_month: dayjs(date).format('YYYY-MM'),
           active: 1,
         });
         await processDueSubscriptions();
@@ -97,7 +121,7 @@ export default function AddTransactionScreen() {
           transaction_type: type,
           confidence_score: 1.0,
           raw_notification_id: null,
-          transaction_timestamp: new Date().toISOString(),
+          transaction_timestamp: timestampFor(date),
           needs_review: 0,
           payment_source: paymentSource,
           paid_by_member_id: paidByMemberId,
@@ -276,49 +300,67 @@ export default function AddTransactionScreen() {
               <View style={styles.recurringBody}>
                 <Text style={styles.fieldLabel}>Billing cycle</Text>
                 <View style={styles.cycleRow}>
-                  {(['monthly', 'yearly'] as BillingCycle[]).map((c) => (
+                  {CYCLES.map((c) => (
                     <TouchableOpacity
-                      key={c}
-                      style={[styles.cycleBtn, cycle === c && styles.cycleBtnActive]}
-                      onPress={() => setCycle(c)}
+                      key={c.key}
+                      style={[styles.cycleBtn, cycle === c.key && styles.cycleBtnActive]}
+                      onPress={() => setCycle(c.key)}
                     >
-                      <Text style={[styles.cycleText, cycle === c && styles.cycleTextActive]}>
-                        {c === 'monthly' ? 'Monthly' : 'Yearly'}
+                      <Text style={[styles.cycleText, cycle === c.key && styles.cycleTextActive]}>
+                        {c.label}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
 
-                <Text style={styles.fieldLabel}>Charge on day</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayScroll}>
-                  {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                    <TouchableOpacity
-                      key={d}
-                      style={[styles.dayChip, dayOfMonth === d && styles.dayChipActive]}
-                      onPress={() => setDayOfMonth(d)}
-                    >
-                      <Text style={[styles.dayChipText, dayOfMonth === d && styles.dayChipTextActive]}>{d}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                {(cycle === 'monthly' || cycle === 'yearly') && (
+                  <>
+                    <Text style={styles.fieldLabel}>Charge on day</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayScroll}>
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                        <TouchableOpacity
+                          key={d}
+                          style={[styles.dayChip, dayOfMonth === d && styles.dayChipActive]}
+                          onPress={() => setDayOfMonth(d)}
+                        >
+                          <Text style={[styles.dayChipText, dayOfMonth === d && styles.dayChipTextActive]}>{d}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
 
                 <Text style={styles.recurringHint}>
-                  {cycle === 'yearly'
-                    ? `≈ ${formatPerMonth(amount)} will be added each month (yearly ÷ 12).`
-                    : `${formatAmount(amount)} will be added on day ${dayOfMonth} every month.`}
+                  {cycle === 'daily'
+                    ? `${formatAmount(amount)} will be added every day, starting today.`
+                    : cycle === 'weekly'
+                      ? `${formatAmount(amount)} will be added every week, starting today.`
+                      : cycle === 'yearly'
+                        ? `≈ ${formatPerMonth(amount)} will be added each month (yearly ÷ 12).`
+                        : `${formatAmount(amount)} will be added on day ${dayOfMonth} every month.`}
                 </Text>
               </View>
             )}
           </Card>
         )}
 
-        {/* Date info */}
+        {/* Date selector */}
         {!recurring && (
-          <View style={styles.dateRow}>
-            <Ionicons name="time-outline" size={14} color={Colors.textMuted} />
-            <Text style={styles.dateText}>
-              Logged as: {dayjs().format('DD MMM YYYY, hh:mm A')}
-            </Text>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Date</Text>
+            <TouchableOpacity style={styles.dateSelector} onPress={() => setDateModal(true)} activeOpacity={0.7}>
+              <Ionicons name="calendar-outline" size={18} color={Colors.primary} />
+              <Text style={styles.dateSelectorText}>
+                {dayjs(date).format('DD MMM YYYY')}
+                {isToday ? ` · ${dayjs().format('hh:mm A')}` : ''}
+              </Text>
+              {!isToday && (
+                <TouchableOpacity onPress={() => setDate(dayjs().format('YYYY-MM-DD'))} hitSlop={8}>
+                  <Text style={styles.dateReset}>Today</Text>
+                </TouchableOpacity>
+              )}
+              <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
           </View>
         )}
 
@@ -329,6 +371,15 @@ export default function AddTransactionScreen() {
           style={styles.saveBtn}
         />
       </ScrollView>
+
+      <DatePickerModal
+        visible={dateModal}
+        value={date}
+        maxDate={dayjs().format('YYYY-MM-DD')}
+        onSelect={setDate}
+        onClose={() => setDateModal(false)}
+        title="Transaction date"
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -433,13 +484,19 @@ const styles = StyleSheet.create({
   tagChipText: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
   tagChipTextSelected: { color: Colors.primary },
 
-  dateRow: {
+  dateSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  dateText: { fontSize: 12, color: Colors.textMuted },
+  dateSelectorText: { flex: 1, fontSize: 14, color: Colors.textPrimary, fontWeight: '500' },
+  dateReset: { fontSize: 12, color: Colors.primary, fontWeight: '600' },
 
   recurringCard: { gap: 12, paddingVertical: 14 },
   recurringHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

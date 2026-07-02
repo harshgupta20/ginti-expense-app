@@ -69,13 +69,16 @@ export async function exportReport(
   startISO: string,
   endISO: string,
   format: ReportFormat,
-  rangeLabel: string
+  rangeLabel: string,
+  category?: string
 ): Promise<{ ok: boolean; count: number; path?: string }> {
   const [txs, members] = await Promise.all([
     getTransactionsByDateRange(startISO, endISO),
     getAllMembers(),
   ]);
-  const expenses = txs.filter((t) => t.transaction_type !== 'reminder');
+  const expenses = txs
+    .filter((t) => t.transaction_type !== 'reminder')
+    .filter((t) => !category || t.category === category);
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
   const memberName = (id: number | null) => (id != null ? memberMap.get(id) ?? null : null);
 

@@ -1,155 +1,196 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Dimensions,
-  TouchableOpacity,
-  ViewToken,
-} from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../src/constants/colors';
 import { Button } from '../src/components/ui/Button';
+import { ProgressBar } from '../src/components/ui/ProgressBar';
+import { Wordmark } from '../src/components/Wordmark';
 import { useSettingsStore } from '../src/stores/settingsStore';
 
-const { width } = Dimensions.get('window');
+// Each screen locks "Next" for this many seconds — a deliberate, unskippable
+// read so the value proposition actually lands.
+const GATE_SECONDS = 4;
 
-const SLIDES = [
+interface Slide {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  brand?: boolean;
+  title: string;
+  description: string;
+  bullets?: string[];
+}
+
+const SLIDES: Slide[] = [
   {
-    id: '1',
-    icon: 'add-circle' as const,
-    title: 'Log Spends in Seconds',
+    icon: 'wallet',
+    iconColor: Colors.primary,
+    brand: true,
+    title: 'Welcome to Ginti',
     description:
-      'Add an expense with a couple of taps — amount, who paid, and how. Ginti keeps it all tidy and beautiful.',
+      'The calm, private way to track every rupee. Log spends in seconds and always know where your money goes.',
   },
   {
-    id: '2',
-    icon: 'sparkles' as const,
-    title: 'Friendly Daily Nudges',
+    icon: 'shield-checkmark',
+    iconColor: Colors.success,
+    title: '100% Private',
     description:
-      'A nightly recap of what you spent, plus a couple of fun reminders to log your expenses. No spam, just good vibes.',
+      'Your data never leaves your phone. No cloud, no accounts, no servers. Everything you log lives on your device — and only your device.',
   },
   {
-    id: '3',
-    icon: 'analytics' as const,
-    title: 'Smart Analytics',
+    icon: 'lock-closed',
+    iconColor: '#3B82F6',
+    title: 'Shared With No One',
     description:
-      'See where your money goes with category breakdowns, spending trends, merchant insights, and a calendar view.',
+      'We never share your data — not with advertisers, not with the government, not with anyone. There is quite literally nothing to share, because we can’t see it.',
   },
   {
-    id: '4',
-    icon: 'wallet' as const,
-    title: 'Budgets That Carry Forward',
+    icon: 'cloud-download',
+    iconColor: '#A855F7',
+    title: 'Your Data, Your Control',
     description:
-      'Set overall and per-category budgets. They roll over month to month, and you get a heads-up as you near a limit.',
+      'Export a full report or back up everything in one tap. Switch phones anytime and carry your entire history with you.',
+  },
+  {
+    icon: 'sparkles',
+    iconColor: Colors.warning,
+    title: 'Everything You Need',
+    description: 'Thoughtfully built, genuinely useful — no clutter, no noise.',
+    bullets: [
+      'Lightning-fast manual logging',
+      'Budgets that carry forward each month',
+      'Daily, weekly, monthly & yearly subscriptions',
+      'Rich analytics, trends & insights',
+      'Calendar view with per-day totals',
+      'One-tap CSV / report export & backup',
+    ],
   },
 ];
 
 export default function Onboarding() {
   const router = useRouter();
-  const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
+  const [index, setIndex] = useState(0);
+  const [remaining, setRemaining] = useState(GATE_SECONDS);
   const completeOnboarding = useSettingsStore((s) => s.completeOnboarding);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const isLast = activeIndex === SLIDES.length - 1;
+  const slide = SLIDES[index];
+  const isLast = index === SLIDES.length - 1;
+  const locked = remaining > 0;
+
+  // Restart the read-gate countdown whenever the visible slide changes.
+  useEffect(() => {
+    setRemaining(GATE_SECONDS);
+    if (timer.current) clearInterval(timer.current);
+    timer.current = setInterval(() => {
+      setRemaining((r) => {
+        const next = Math.max(0, Math.round((r - 0.1) * 10) / 10);
+        if (next <= 0 && timer.current) clearInterval(timer.current);
+        return next;
+      });
+    }, 100);
+    return () => {
+      if (timer.current) clearInterval(timer.current);
+    };
+  }, [index]);
 
   const handleNext = async () => {
+    if (locked) return;
     if (isLast) {
       await completeOnboarding();
       router.replace('/permission');
     } else {
-      flatListRef.current?.scrollToIndex({ index: activeIndex + 1, animated: true });
+      setIndex((i) => i + 1);
     }
   };
 
-  const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems[0]) setActiveIndex(viewableItems[0].index ?? 0);
-    }
-  ).current;
+  const progress = ((GATE_SECONDS - remaining) / GATE_SECONDS) * 100;
 
   return (
     <View style={styles.container}>
-      <FlatList
-        ref={flatListRef}
-        data={SLIDES}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.slide}>
-            <View style={styles.iconCircle}>
-              <Ionicons name={item.icon} size={64} color={Colors.primary} />
-            </View>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.description}>{item.description}</Text>
+      <View style={styles.top}>
+        <Wordmark size="sm" />
+        <Text style={styles.step}>{index + 1} / {SLIDES.length}</Text>
+      </View>
+
+      <View style={styles.slide}>
+        <View style={[styles.iconCircle, { backgroundColor: `${slide.iconColor}22` }]}>
+          <Ionicons name={slide.icon} size={60} color={slide.iconColor} />
+        </View>
+
+        {slide.brand ? (
+          <View style={styles.brandRow}>
+            <Wordmark size="lg" />
+          </View>
+        ) : null}
+
+        <Text style={styles.title}>{slide.title}</Text>
+        <Text style={styles.description}>{slide.description}</Text>
+
+        {slide.bullets && (
+          <View style={styles.bullets}>
+            {slide.bullets.map((b) => (
+              <View key={b} style={styles.bulletRow}>
+                <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+                <Text style={styles.bulletText}>{b}</Text>
+              </View>
+            ))}
           </View>
         )}
-      />
+      </View>
 
       <View style={styles.footer}>
         <View style={styles.dots}>
           {SLIDES.map((_, i) => (
-            <View
-              key={i}
-              style={[styles.dot, i === activeIndex && styles.dotActive]}
-            />
+            <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
           ))}
         </View>
 
+        {/* Read-gate progress */}
+        {locked && <ProgressBar percentage={progress} color={Colors.primary} height={4} />}
+
         <Button
-          label={isLast ? 'Get Started' : 'Next'}
+          label={locked ? `Please read… ${Math.ceil(remaining)}` : isLast ? 'Get Started' : 'Next'}
           onPress={handleNext}
+          disabled={locked}
           size="lg"
           fullWidth
         />
-
-        {!isLast && (
-          <TouchableOpacity
-            onPress={async () => {
-              await completeOnboarding();
-              router.replace('/permission');
-            }}
-            style={styles.skip}
-          >
-            <Text style={styles.skipText}>Skip</Text>
-          </TouchableOpacity>
-        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
+  container: { flex: 1, backgroundColor: Colors.background },
+  top: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 60,
   },
+  step: { fontSize: 13, color: Colors.textMuted, fontWeight: '600' },
+
   slide: {
-    width,
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 40,
-    gap: 24,
+    paddingHorizontal: 32,
+    gap: 20,
   },
   iconCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: Colors.primaryDim,
+    width: 132,
+    height: 132,
+    borderRadius: 66,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
   },
+  brandRow: { marginBottom: -4 },
   title: {
-    fontSize: 26,
-    fontWeight: '700',
+    fontSize: 27,
+    fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
     lineHeight: 34,
@@ -160,6 +201,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
+  bullets: { alignSelf: 'stretch', gap: 12, marginTop: 4 },
+  bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  bulletText: { flex: 1, fontSize: 15, color: Colors.textPrimary, lineHeight: 20 },
+
   footer: {
     padding: 24,
     paddingBottom: 48,
@@ -169,24 +214,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.border,
-  },
-  dotActive: {
-    width: 20,
-    backgroundColor: Colors.primary,
-  },
-  skip: {
-    alignItems: 'center',
-    padding: 8,
-  },
-  skipText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.border },
+  dotActive: { width: 20, backgroundColor: Colors.primary },
 });

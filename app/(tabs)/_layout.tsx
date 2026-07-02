@@ -5,6 +5,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '../../src/constants/colors';
 import { useTransactionStore } from '../../src/stores/transactionStore';
 import { useReminders } from '../../src/hooks/useReminders';
+import { Wordmark } from '../../src/components/Wordmark';
 
 function TabBarIcon({ name, focused }: { name: keyof typeof Ionicons.glyphMap; focused: boolean }) {
   return (
@@ -43,6 +44,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Dashboard',
+          headerTitle: () => <Wordmark size="sm" />,
           tabBarIcon: ({ focused }) => <TabBarIcon name="home" focused={focused} />,
           headerRight: () =>
             reviewCount > 0 ? (

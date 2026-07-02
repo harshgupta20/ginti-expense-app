@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   View,
   Text,
@@ -37,9 +38,11 @@ export default function HistoryScreen() {
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>();
   const [selectedSource, setSelectedSource] = useState<SourceApp | undefined>();
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   const handleSearch = useCallback(
     (text: string) => {
@@ -93,7 +96,7 @@ export default function HistoryScreen() {
           <Ionicons name="search" size={18} color={Colors.textMuted} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search merchants..."
+            placeholder="Search transactions..."
             placeholderTextColor={Colors.textMuted}
             value={searchQuery}
             onChangeText={handleSearch}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  RefreshControl,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/colors';
 import { useBudget } from '../../src/hooks/useBudget';
@@ -35,10 +36,19 @@ export default function BudgetsScreen() {
   const [limitInput, setLimitInput] = useState('');
   const [pickCategory, setPickCategory] = useState<string>('Food');
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  };
 
   const monthLabel = dayjs(`${selectedMonth}-01`).format('MMMM YYYY');
   const isCurrentMonth = selectedMonth === dayjs().format('YYYY-MM');
@@ -127,6 +137,7 @@ export default function BudgetsScreen() {
         data={categoryProgress}
         keyExtractor={(item) => item.category}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
         ListHeaderComponent={
           <View style={styles.headerArea}>
             {/* Summary */}

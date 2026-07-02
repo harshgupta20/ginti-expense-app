@@ -33,6 +33,37 @@ function nextChargeDate(day: number): string {
   return next.format('DD MMM');
 }
 
+const CYCLES: { key: BillingCycle; label: string }[] = [
+  { key: 'daily', label: 'Daily' },
+  { key: 'weekly', label: 'Weekly' },
+  { key: 'monthly', label: 'Monthly' },
+  { key: 'yearly', label: 'Yearly' },
+];
+
+/** Human-readable "amount / cadence · next" summary line for a subscription. */
+function subMeta(sub: Subscription, paused: boolean): string {
+  let amountPart: string;
+  switch (sub.billing_cycle) {
+    case 'daily':
+      amountPart = `${formatCurrency(sub.amount)}/day`;
+      break;
+    case 'weekly':
+      amountPart = `${formatCurrency(sub.amount)}/wk`;
+      break;
+    case 'yearly':
+      amountPart = `${formatCurrency(sub.amount)}/yr · ${formatCurrency(monthlyCharge(sub), true)}/mo`;
+      break;
+    default:
+      amountPart = `${formatCurrency(sub.amount)}/mo`;
+  }
+  let nextPart: string;
+  if (paused) nextPart = 'Paused';
+  else if (sub.billing_cycle === 'daily') nextPart = 'every day';
+  else if (sub.billing_cycle === 'weekly') nextPart = 'every week';
+  else nextPart = `next ${nextChargeDate(sub.day_of_month)}`;
+  return `${amountPart} · ${nextPart}`;
+}
+
 export default function SubscriptionsScreen() {
   const router = useRouter();
   const { subscriptions, load, edit, remove, toggleActive } = useSubscriptionStore();
@@ -103,13 +134,7 @@ export default function SubscriptionsScreen() {
                 <CategoryIcon category={item.category} size={18} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.meta}>
-                    {item.billing_cycle === 'yearly'
-                      ? `${formatCurrency(item.amount)}/yr · ${formatCurrency(monthlyCharge(item), true)}/mo`
-                      : `${formatCurrency(item.amount)}/mo`}
-                    {' · '}
-                    {paused ? 'Paused' : `next ${nextChargeDate(item.day_of_month)}`}
-                  </Text>
+                  <Text style={styles.meta}>{subMeta(item, paused)}</Text>
                 </View>
                 <Switch
                   value={item.active === 1}
@@ -151,7 +176,9 @@ export default function SubscriptionsScreen() {
             <View style={styles.handle} />
             <Text style={styles.sheetTitle}>{editing?.name}</Text>
 
-            <Text style={styles.label}>Amount ({cycle === 'yearly' ? 'per year' : 'per month'})</Text>
+            <Text style={styles.label}>
+              Amount ({cycle === 'daily' ? 'per day' : cycle === 'weekly' ? 'per week' : cycle === 'yearly' ? 'per year' : 'per month'})
+            </Text>
             <View style={styles.amountInput}>
               <Text style={styles.currency}>₹</Text>
               <TextInput
@@ -166,31 +193,35 @@ export default function SubscriptionsScreen() {
 
             <Text style={styles.label}>Billing cycle</Text>
             <View style={styles.cycleRow}>
-              {(['monthly', 'yearly'] as BillingCycle[]).map((c) => (
+              {CYCLES.map((c) => (
                 <TouchableOpacity
-                  key={c}
-                  style={[styles.cycleBtn, cycle === c && styles.cycleBtnActive]}
-                  onPress={() => setCycle(c)}
+                  key={c.key}
+                  style={[styles.cycleBtn, cycle === c.key && styles.cycleBtnActive]}
+                  onPress={() => setCycle(c.key)}
                 >
-                  <Text style={[styles.cycleText, cycle === c && styles.cycleTextActive]}>
-                    {c === 'monthly' ? 'Monthly' : 'Yearly'}
+                  <Text style={[styles.cycleText, cycle === c.key && styles.cycleTextActive]}>
+                    {c.label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <Text style={styles.label}>Charge on day</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
-              {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                <TouchableOpacity
-                  key={d}
-                  style={[styles.dayChip, day === d && styles.dayChipActive]}
-                  onPress={() => setDay(d)}
-                >
-                  <Text style={[styles.dayChipText, day === d && styles.dayChipTextActive]}>{d}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            {(cycle === 'monthly' || cycle === 'yearly') && (
+              <>
+                <Text style={styles.label}>Charge on day</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                    <TouchableOpacity
+                      key={d}
+                      style={[styles.dayChip, day === d && styles.dayChipActive]}
+                      onPress={() => setDay(d)}
+                    >
+                      <Text style={[styles.dayChipText, day === d && styles.dayChipTextActive]}>{d}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            )}
 
             <View style={styles.sheetActions}>
               <Button label="Cancel" variant="secondary" onPress={() => setEditing(null)} style={{ flex: 1 }} />

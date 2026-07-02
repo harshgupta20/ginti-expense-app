@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Transaction } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { AmountDisplay } from './AmountDisplay';
@@ -38,10 +39,14 @@ export function TransactionItem({ transaction: tx, onPress, showDate }: Transact
         </View>
 
         <View style={styles.bottomRow}>
-          <Text style={styles.meta}>
+          <Text style={styles.meta} numberOfLines={1}>
             {tx.category}
+            {tx.payment_source ? `  ·  ${tx.payment_source}` : ''}
             {showDate ? '' : `  ·  ${formatTime(tx.transaction_timestamp)}`}
           </Text>
+          {tx.subscription_id != null && (
+            <Ionicons name="repeat" size={13} color={Colors.textMuted} style={styles.recurIcon} />
+          )}
           {tx.needs_review === 1 && (
             <Badge label="Review" color={Colors.warning} size="sm" />
           )}
@@ -80,7 +85,11 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   meta: {
+    flex: 1,
     fontSize: 12,
     color: Colors.textSecondary,
+  },
+  recurIcon: {
+    marginLeft: 6,
   },
 });

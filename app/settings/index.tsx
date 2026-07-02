@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/colors';
 import { Card } from '../../src/components/ui/Card';
 import { LoadingSpinner } from '../../src/components/ui/LoadingSpinner';
+import { Wordmark } from '../../src/components/Wordmark';
 import { shareExportedCSV } from '../../src/services/exportService';
 import { clearAllData } from '../../src/db/database';
 import { useTransactionStore } from '../../src/stores/transactionStore';
@@ -154,10 +155,11 @@ export default function SettingsScreen() {
           />
           <View style={styles.separator} />
           <SettingRow
-            icon="pricetag-outline"
-            label="Manage Merchant Tags"
-            description="Customize merchant name normalization"
-            onPress={() => router.push('/settings/merchant-aliases')}
+            icon="document-text-outline"
+            label="Export Report"
+            description="Filtered CSV or table by date, month or year"
+            onPress={() => router.push('/configure/export-report')}
+            iconColor={Colors.info}
           />
         </Card>
       </View>
@@ -179,8 +181,14 @@ export default function SettingsScreen() {
 
       {/* App info */}
       <View style={styles.appInfo}>
-        <Text style={styles.appName}>Ginti</Text>
-        <Text style={styles.appVersion}>v1.0.0 · Local-first · No cloud</Text>
+        <Wordmark size="lg" showTagline />
+        <View style={styles.badges}>
+          <View style={styles.privacyBadge}>
+            <Ionicons name="shield-checkmark" size={13} color={Colors.success} />
+            <Text style={styles.privacyText}>100% on-device · No cloud</Text>
+          </View>
+        </View>
+        <Text style={styles.appVersion}>Version 1.0.0</Text>
       </View>
     </ScrollView>
   );
@@ -210,7 +218,17 @@ const styles = StyleSheet.create({
   scheduleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 14, paddingTop: 4 },
   scheduleText: { fontSize: 12, color: Colors.textSecondary },
 
-  appInfo: { alignItems: 'center', gap: 4, paddingTop: 16 },
-  appName: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
+  appInfo: { alignItems: 'center', gap: 10, paddingTop: 16 },
+  badges: { flexDirection: 'row', gap: 8 },
+  privacyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.successDim,
+    borderRadius: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  privacyText: { fontSize: 12, color: Colors.success, fontWeight: '600' },
   appVersion: { fontSize: 12, color: Colors.textMuted },
 });

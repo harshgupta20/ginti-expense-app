@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/colors';
 import { getTransactionsByDateRange, getDailySpend } from '../../src/db/database';
 import { Transaction } from '../../src/types';
@@ -61,21 +63,15 @@ function DayCell({ date, state, amount, isSelected, onPress }: DayCellProps) {
 }
 
 export default function CalendarScreen() {
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [spendByDate, setSpendByDate] = useState<Record<string, number>>({});
   const [dayTransactions, setDayTransactions] = useState<Transaction[]>([]);
   const [dayTotal, setDayTotal] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadMonthData();
-  }, [currentMonth]);
-
-  useEffect(() => {
-    loadDayTransactions(selectedDate);
-  }, [selectedDate]);
-
-  const loadMonthData = async () => {
+  const loadMonthData = useCallback(async () => {
     const start = startOfMonth(currentMonth.toDate());
     const end = endOfMonth(currentMonth.toDate());
     const dailyData = await getDailySpend(start, end);
@@ -84,15 +80,30 @@ export default function CalendarScreen() {
       map[date] = amount;
     }
     setSpendByDate(map);
-  };
+  }, [currentMonth]);
 
-  const loadDayTransactions = async (date: string) => {
+  const loadDayTransactions = useCallback(async (date: string) => {
     const start = startOfDay(date);
     const end = endOfDay(date);
     const txs = await getTransactionsByDateRange(start, end);
     const total = txs.filter((t) => t.transaction_type === 'expense').reduce((a, t) => a + t.amount, 0);
     setDayTransactions(txs);
     setDayTotal(total);
+  }, []);
+
+  // Reload on focus (e.g. after adding a transaction) and whenever the visible
+  // month or selected day changes.
+  useFocusEffect(
+    useCallback(() => {
+      loadMonthData();
+      loadDayTransactions(selectedDate);
+    }, [loadMonthData, loadDayTransactions, selectedDate])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([loadMonthData(), loadDayTransactions(selectedDate)]);
+    setRefreshing(false);
   };
 
   const monthTotal = Object.values(spendByDate).reduce((a, b) => a + b, 0);
@@ -128,14 +139,25 @@ export default function CalendarScreen() {
       </View>
 
       <View style={styles.dayHeader}>
-        <Text style={styles.dayTitle}>{formatDate(selectedDate, 'DD MMMM YYYY')}</Text>
-        {dayTotal > 0 && <Text style={styles.dayTotal}>{formatCurrency(dayTotal)} spent</Text>}
+        <View style={styles.dayHeaderLeft}>
+          <Text style={styles.dayTitle}>{formatDate(selectedDate, 'DD MMMM YYYY')}</Text>
+          {dayTotal > 0 && <Text style={styles.dayTotal}>{formatCurrency(dayTotal)} spent</Text>}
+        </View>
+        <TouchableOpacity
+          style={styles.addForDay}
+          onPress={() => router.push({ pathname: '/add-transaction', params: { date: selectedDate } })}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={16} color={Colors.primary} />
+          <Text style={styles.addForDayText}>Add</Text>
+        </TouchableOpacity>
       </View>
 
       <FlatList
         data={dayTransactions}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.txList}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
         renderItem={({ item, index }) => (
           <View>
             <TransactionItem transaction={item} showDate />
@@ -146,7 +168,7 @@ export default function CalendarScreen() {
           <EmptyState
             icon="calendar-outline"
             title="No transactions"
-            description="No expenses recorded on this day."
+            description="No expenses on this day. Tap Add to log one for this date."
           />
         }
       />
@@ -207,8 +229,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
+  dayHeaderLeft: { flex: 1, gap: 2 },
   dayTitle: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary },
   dayTotal: { fontSize: 14, fontWeight: '700', color: Colors.expense },
+  addForDay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primaryDim,
+    borderWidth: 1,
+    borderColor: `${Colors.primary}55`,
+    borderRadius: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  addForDayText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
   txList: { paddingHorizontal: 16, paddingBottom: 24 },
   divider: { height: 1, backgroundColor: Colors.border },
 });

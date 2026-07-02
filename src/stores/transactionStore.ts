@@ -1,14 +1,28 @@
 import { create } from 'zustand';
-import { Transaction, TransactionFilters, Category, DashboardStats, CategoryBreakdown, WeeklyData, MonthlyData } from '../types';
+import {
+  Transaction,
+  TransactionFilters,
+  Category,
+  DashboardStats,
+  CategoryBreakdown,
+  WeeklyData,
+  MonthlyData,
+  PaymentSourceStat,
+  WeekdaySpend,
+  PeriodTotals,
+} from '../types';
 import {
   getTransactions,
   getTransactionsNeedingReview,
   getRecentTransactions,
   getSpendByDateRange,
   getCategoryBreakdown,
-  getTopMerchants,
   getDailySpend,
   getMonthlySpend,
+  getTypeTotals,
+  getBiggestExpense,
+  getPaymentSourceBreakdown,
+  getWeekdaySpend,
   updateTransaction,
   deleteTransaction,
   insertParserFeedback,
@@ -29,7 +43,10 @@ interface TransactionStore {
   categoryBreakdown: CategoryBreakdown[];
   weeklyData: WeeklyData[];
   monthlyData: MonthlyData[];
-  topMerchants: { merchant: string; total: number; count: number; last_date: string }[];
+  periodTotals: PeriodTotals;
+  paymentSourceStats: PaymentSourceStat[];
+  weekdaySpend: WeekdaySpend[];
+  prevPeriodExpense: number;
 
   fetchTransactions: (reset?: boolean) => Promise<void>;
   fetchReviewQueue: () => Promise<void>;
@@ -54,7 +71,15 @@ const DEFAULT_STATS: DashboardStats = {
   monthSpend: 0,
   avgDailySpend: 0,
   topCategory: null,
-  topMerchant: null,
+};
+
+const DEFAULT_PERIOD_TOTALS: PeriodTotals = {
+  expense: 0,
+  income: 0,
+  transfer: 0,
+  count: 0,
+  avgExpense: 0,
+  biggestExpense: null,
 };
 
 export const useTransactionStore = create<TransactionStore>((set, get) => ({
@@ -70,7 +95,10 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
   categoryBreakdown: [],
   weeklyData: [],
   monthlyData: [],
-  topMerchants: [],
+  periodTotals: DEFAULT_PERIOD_TOTALS,
+  paymentSourceStats: [],
+  weekdaySpend: [],
+  prevPeriodExpense: 0,
 
   fetchTransactions: async (reset = false) => {
     const { filters, currentPage, isLoading } = get();
@@ -122,12 +150,11 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       const monthStart = now.startOf('month').toISOString();
       const monthEnd = now.endOf('month').toISOString();
 
-      const [todaySpend, weekSpend, monthSpend, breakdown, merchants] = await Promise.all([
+      const [todaySpend, weekSpend, monthSpend, breakdown] = await Promise.all([
         getSpendByDateRange(todayStart, todayEnd),
         getSpendByDateRange(weekStart, todayEnd),
         getSpendByDateRange(monthStart, monthEnd),
         getCategoryBreakdown(monthStart, monthEnd),
-        getTopMerchants(monthStart, monthEnd, 1),
       ]);
 
       const daysInMonth = now.date();
@@ -140,7 +167,6 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
           monthSpend,
           avgDailySpend,
           topCategory: breakdown[0]?.category ?? null,
-          topMerchant: merchants[0]?.merchant ?? null,
         },
       });
     } catch (e) {
@@ -150,27 +176,51 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
 
   fetchAnalyticsData: async (startDate: string, endDate: string) => {
     try {
-      const [breakdown, merchants, daily, monthly] = await Promise.all([
-        getCategoryBreakdown(startDate, endDate),
-        getTopMerchants(startDate, endDate, 10),
-        getDailySpend(startDate, endDate),
-        getMonthlySpend(),
-      ]);
+      // Previous period of equal length, for the period-over-period comparison.
+      const spanMs = dayjs(endDate).diff(dayjs(startDate));
+      const prevStart = dayjs(startDate).subtract(spanMs, 'millisecond').toISOString();
+      const prevEnd = startDate;
+
+      const [breakdown, daily, monthly, typeTotals, biggest, sources, weekday, prevExpense] =
+        await Promise.all([
+          getCategoryBreakdown(startDate, endDate),
+          getDailySpend(startDate, endDate),
+          getMonthlySpend(),
+          getTypeTotals(startDate, endDate),
+          getBiggestExpense(startDate, endDate),
+          getPaymentSourceBreakdown(startDate, endDate),
+          getWeekdaySpend(startDate, endDate),
+          getSpendByDateRange(prevStart, prevEnd),
+        ]);
 
       const totalSpend = breakdown.reduce((acc, b) => acc + b.amount, 0);
+      const findType = (t: string) => typeTotals.find((x) => x.transaction_type === t);
+      const expenseRow = findType('expense');
+      const expense = expenseRow?.total ?? 0;
+      const count = expenseRow?.count ?? 0;
 
       set({
         categoryBreakdown: breakdown.map((b) => ({
           ...b,
           percentage: totalSpend > 0 ? (b.amount / totalSpend) * 100 : 0,
         })),
-        topMerchants: merchants,
         weeklyData: daily.map((d) => ({
           date: d.date,
           amount: d.amount,
           label: dayjs(d.date).format('DD'),
         })),
         monthlyData: monthly,
+        periodTotals: {
+          expense,
+          income: findType('income')?.total ?? 0,
+          transfer: findType('transfer')?.total ?? 0,
+          count,
+          avgExpense: count > 0 ? expense / count : 0,
+          biggestExpense: biggest,
+        },
+        paymentSourceStats: sources.map((s) => ({ source: s.source, amount: s.amount, count: s.count })),
+        weekdaySpend: weekday,
+        prevPeriodExpense: prevExpense,
       });
     } catch (e) {
       console.error('fetchAnalyticsData error:', e);

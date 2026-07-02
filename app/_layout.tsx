@@ -7,7 +7,6 @@ import { StyleSheet } from 'react-native';
 import { initDatabase } from '../src/db/database';
 import { useSettingsStore } from '../src/stores/settingsStore';
 import { useConfigStore } from '../src/stores/configStore';
-import { loadMerchantAliasCache } from '../src/services/merchantAlias';
 import { Colors } from '../src/constants/colors';
 
 SplashScreen.preventAutoHideAsync();
@@ -22,7 +21,6 @@ export default function RootLayout() {
       try {
         await initDatabase();
         await Promise.all([loadSettings(), loadConfig()]);
-        await loadMerchantAliasCache();
       } catch (e) {
         console.error('Init error:', e);
       } finally {
@@ -52,10 +50,8 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="transaction/[id]" options={{ title: 'Transaction Details' }} />
         <Stack.Screen name="review-queue" options={{ title: 'Needs Review' }} />
-        <Stack.Screen name="merchant-insights" options={{ title: 'Merchant Insights' }} />
         <Stack.Screen name="settings/index" options={{ title: 'Settings' }} />
         <Stack.Screen name="settings/categories" options={{ title: 'Manage Categories' }} />
-        <Stack.Screen name="settings/merchant-aliases" options={{ title: 'Merchant Aliases' }} />
         <Stack.Screen name="configure/categories" options={{ title: 'Categories' }} />
         <Stack.Screen name="configure/payment-sources" options={{ title: 'Payment Sources' }} />
         <Stack.Screen name="configure/members" options={{ title: 'People' }} />

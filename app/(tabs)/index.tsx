@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/colors';
 import { useTransactionStore } from '../../src/stores/transactionStore';
@@ -27,11 +27,14 @@ export default function DashboardScreen() {
   const fetchReview = useTransactionStore((s) => s.fetchReviewQueue);
   const [refreshing, setRefreshing] = React.useState(false);
 
-  useEffect(() => {
-    fetchDashboard();
-    fetchRecent();
-    fetchReview();
-  }, []);
+  // Refetch every time the dashboard regains focus so freshly added entries show.
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboard();
+      fetchRecent();
+      fetchReview();
+    }, [fetchDashboard, fetchRecent, fetchReview])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -39,8 +42,7 @@ export default function DashboardScreen() {
     setRefreshing(false);
   };
 
-  const { todaySpend, weekSpend, monthSpend, avgDailySpend, topCategory, topMerchant } =
-    dashboardStats;
+  const { todaySpend, weekSpend, monthSpend, avgDailySpend, topCategory } = dashboardStats;
 
   return (
     <View style={styles.root}>
@@ -103,22 +105,6 @@ export default function DashboardScreen() {
         />
       </View>
 
-      {/* Top Merchant */}
-      {topMerchant && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Top Merchant This Month</Text>
-          <TouchableOpacity
-            style={styles.merchantChip}
-            onPress={() => router.push('/merchant-insights')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="storefront" size={20} color={Colors.primary} />
-            <Text style={styles.merchantName}>{topMerchant}</Text>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-          </TouchableOpacity>
-        </View>
-      )}
-
       {/* Recent Transactions */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -132,7 +118,7 @@ export default function DashboardScreen() {
           <EmptyState
             icon="receipt-outline"
             title="No transactions yet"
-            description="Payment notifications will appear here automatically."
+            description="Tap the + button to log your first expense."
           />
         ) : (
           <View style={styles.txList}>
@@ -158,11 +144,11 @@ export default function DashboardScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionBtn}
-          onPress={() => router.push('/merchant-insights')}
+          onPress={() => router.push('/(tabs)/analytics')}
           activeOpacity={0.7}
         >
-          <Ionicons name="storefront-outline" size={20} color={Colors.textSecondary} />
-          <Text style={styles.actionLabel}>Merchants</Text>
+          <Ionicons name="bar-chart-outline" size={20} color={Colors.textSecondary} />
+          <Text style={styles.actionLabel}>Analytics</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionBtn}

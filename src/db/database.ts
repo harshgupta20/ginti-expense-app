@@ -385,39 +385,95 @@ export async function getCategoryBreakdown(
   );
 }
 
-export async function getTopMerchants(
-  start: string,
-  end: string,
-  limit = 10
-): Promise<{ merchant: string; total: number; count: number; last_date: string }[]> {
-  const database = await getDatabase();
-  return database.getAllAsync(
-    `SELECT normalized_merchant_name as merchant, SUM(amount) as total,
-            COUNT(*) as count, MAX(transaction_timestamp) as last_date
-     FROM transactions
-     WHERE transaction_timestamp >= ? AND transaction_timestamp <= ?
-     AND transaction_type = 'expense'
-     AND normalized_merchant_name != ''
-     GROUP BY normalized_merchant_name
-     ORDER BY total DESC LIMIT ?`,
-    [start, end, limit]
-  );
-}
-
 export async function getDailySpend(
   start: string,
   end: string
 ): Promise<{ date: string; amount: number }[]> {
   const database = await getDatabase();
+  // Group by the LOCAL calendar date. Timestamps are stored in UTC (ISO with a
+  // trailing Z), so DATE(...) without 'localtime' would bucket late-evening
+  // transactions into the following (UTC) day — which made the calendar's day
+  // cells and month total disagree with the per-day detail (which uses local
+  // start/end-of-day ranges). 'localtime' keeps both views consistent.
   return database.getAllAsync(
-    `SELECT DATE(transaction_timestamp) as date, SUM(amount) as amount
+    `SELECT DATE(transaction_timestamp, 'localtime') as date, SUM(amount) as amount
      FROM transactions
      WHERE transaction_timestamp >= ? AND transaction_timestamp <= ?
      AND transaction_type = 'expense'
-     GROUP BY DATE(transaction_timestamp)
+     GROUP BY DATE(transaction_timestamp, 'localtime')
      ORDER BY date ASC`,
     [start, end]
   );
+}
+
+/** Totals per transaction type (expense / income / transfer) within a range. */
+export async function getTypeTotals(
+  start: string,
+  end: string
+): Promise<{ transaction_type: string; total: number; count: number }[]> {
+  const database = await getDatabase();
+  return database.getAllAsync(
+    `SELECT transaction_type, SUM(amount) as total, COUNT(*) as count
+     FROM transactions
+     WHERE transaction_timestamp >= ? AND transaction_timestamp <= ?
+     AND transaction_type != 'reminder'
+     GROUP BY transaction_type`,
+    [start, end]
+  );
+}
+
+/** The single largest expense in a range (for the "biggest spend" insight). */
+export async function getBiggestExpense(
+  start: string,
+  end: string
+): Promise<{ amount: number; name: string; date: string } | null> {
+  const database = await getDatabase();
+  const row = await database.getFirstAsync<{ amount: number; name: string; date: string }>(
+    `SELECT amount,
+            COALESCE(NULLIF(normalized_merchant_name,''), NULLIF(merchant_name,''), NULLIF(note,''), category) as name,
+            transaction_timestamp as date
+     FROM transactions
+     WHERE transaction_timestamp >= ? AND transaction_timestamp <= ?
+     AND transaction_type = 'expense'
+     ORDER BY amount DESC LIMIT 1`,
+    [start, end]
+  );
+  return row ?? null;
+}
+
+/** Expense totals grouped by payment source (falls back to source_app). */
+export async function getPaymentSourceBreakdown(
+  start: string,
+  end: string
+): Promise<{ source: string; amount: number; count: number }[]> {
+  const database = await getDatabase();
+  return database.getAllAsync(
+    `SELECT COALESCE(NULLIF(payment_source,''), NULLIF(source_app,''), 'Unknown') as source,
+            SUM(amount) as amount, COUNT(*) as count
+     FROM transactions
+     WHERE transaction_timestamp >= ? AND transaction_timestamp <= ?
+     AND transaction_type = 'expense'
+     GROUP BY source ORDER BY amount DESC`,
+    [start, end]
+  );
+}
+
+/** Expense totals grouped by local weekday (0 = Sunday … 6 = Saturday). */
+export async function getWeekdaySpend(
+  start: string,
+  end: string
+): Promise<{ weekday: number; amount: number; count: number }[]> {
+  const database = await getDatabase();
+  const rows = await database.getAllAsync<{ w: string; amount: number; count: number }>(
+    `SELECT strftime('%w', transaction_timestamp, 'localtime') as w,
+            SUM(amount) as amount, COUNT(*) as count
+     FROM transactions
+     WHERE transaction_timestamp >= ? AND transaction_timestamp <= ?
+     AND transaction_type = 'expense'
+     GROUP BY w`,
+    [start, end]
+  );
+  return rows.map((r) => ({ weekday: parseInt(r.w, 10), amount: r.amount, count: r.count }));
 }
 
 export async function getMonthlySpend(): Promise<{ month: string; amount: number }[]> {
@@ -427,19 +483,6 @@ export async function getMonthlySpend(): Promise<{ month: string; amount: number
      FROM transactions
      WHERE transaction_type = 'expense'
      GROUP BY month ORDER BY month ASC LIMIT 12`
-  );
-}
-
-export async function getMerchantStats(
-  merchantName: string
-): Promise<{ total: number; count: number; avg: number; last_date: string } | null> {
-  const database = await getDatabase();
-  return database.getFirstAsync(
-    `SELECT SUM(amount) as total, COUNT(*) as count,
-            AVG(amount) as avg, MAX(transaction_timestamp) as last_date
-     FROM transactions
-     WHERE normalized_merchant_name = ? AND transaction_type = 'expense'`,
-    [merchantName]
   );
 }
 
@@ -456,52 +499,6 @@ export async function getNearDuplicates(
      ORDER BY transaction_timestamp DESC LIMIT 5`,
     [amount, timestamp, windowSeconds]
   );
-}
-
-export async function getAllTransactionsForMerchant(merchant: string): Promise<Transaction[]> {
-  const database = await getDatabase();
-  return database.getAllAsync<Transaction>(
-    `SELECT * FROM transactions
-     WHERE normalized_merchant_name = ?
-     AND transaction_type = 'expense'
-     ORDER BY transaction_timestamp DESC`,
-    [merchant]
-  );
-}
-
-// ─── Merchant Aliases ─────────────────────────────────────────────────────────
-
-export async function getAllMerchantAliases(): Promise<MerchantAlias[]> {
-  const database = await getDatabase();
-  return database.getAllAsync<MerchantAlias>(
-    'SELECT * FROM merchant_aliases ORDER BY normalized_name ASC'
-  );
-}
-
-export async function getMerchantAlias(originalName: string): Promise<string | null> {
-  const database = await getDatabase();
-  const upperName = originalName.toUpperCase().trim();
-  const result = await database.getFirstAsync<{ normalized_name: string }>(
-    'SELECT normalized_name FROM merchant_aliases WHERE UPPER(original_name) = ?',
-    [upperName]
-  );
-  return result?.normalized_name ?? null;
-}
-
-export async function upsertMerchantAlias(
-  originalName: string,
-  normalizedName: string
-): Promise<void> {
-  const database = await getDatabase();
-  await database.runAsync(
-    'INSERT OR REPLACE INTO merchant_aliases (original_name, normalized_name) VALUES (?, ?)',
-    [originalName.toUpperCase().trim(), normalizedName]
-  );
-}
-
-export async function deleteMerchantAlias(id: number): Promise<void> {
-  const database = await getDatabase();
-  await database.runAsync('DELETE FROM merchant_aliases WHERE id = ?', [id]);
 }
 
 // ─── Budgets ──────────────────────────────────────────────────────────────────
@@ -821,6 +818,18 @@ export async function getSubscriptionChargedMonths(subId: number): Promise<Set<s
   return new Set(rows.map((r) => r.m));
 }
 
+/** Local dates ('YYYY-MM-DD') a subscription has already charged — used to
+ *  de-duplicate daily/weekly charges (which recur more than once a month). */
+export async function getSubscriptionChargedDates(subId: number): Promise<Set<string>> {
+  const database = await getDatabase();
+  const rows = await database.getAllAsync<{ d: string }>(
+    `SELECT DISTINCT DATE(transaction_timestamp, 'localtime') as d
+     FROM transactions WHERE subscription_id = ?`,
+    [subId]
+  );
+  return new Set(rows.map((r) => r.d));
+}
+
 // ─── Backup (full export / import) ───────────────────────────────────────────────
 
 export interface BackupData {
@@ -905,14 +914,4 @@ export async function getAllTransactionsForExport(): Promise<Transaction[]> {
      WHERE transaction_type != 'reminder'
      ORDER BY transaction_timestamp DESC`
   );
-}
-
-export async function getUniqueMerchants(): Promise<string[]> {
-  const database = await getDatabase();
-  const rows = await database.getAllAsync<{ merchant: string }>(
-    `SELECT DISTINCT normalized_merchant_name as merchant FROM transactions
-     WHERE normalized_merchant_name != '' AND transaction_type = 'expense'
-     ORDER BY merchant ASC`
-  );
-  return rows.map((r) => r.merchant);
 }

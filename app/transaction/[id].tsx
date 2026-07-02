@@ -121,12 +121,12 @@ export default function TransactionDetailScreen() {
           <Text style={styles.sectionTitle}>Edit Details</Text>
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Merchant</Text>
+            <Text style={styles.fieldLabel}>Name</Text>
             <TextInput
               style={styles.fieldInput}
               value={editMerchant}
               onChangeText={setEditMerchant}
-              placeholder="Merchant name"
+              placeholder="What was this for?"
               placeholderTextColor={Colors.textMuted}
             />
           </View>
@@ -169,13 +169,16 @@ export default function TransactionDetailScreen() {
           <Text style={styles.sectionTitle}>Details</Text>
 
           {[
+            { label: 'Name', value: tx.normalized_merchant_name || tx.merchant_name || '—' },
+            { label: 'Amount', value: `₹${tx.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` },
             { label: 'Category', value: tx.category },
             { label: 'Type', value: tx.transaction_type.charAt(0).toUpperCase() + tx.transaction_type.slice(1) },
-            { label: 'Paid via', value: tx.payment_source || tx.source_app },
+            { label: 'Date', value: `${formatDate(tx.transaction_timestamp)} · ${formatTime(tx.transaction_timestamp)}` },
+            { label: 'Paid via', value: tx.payment_source || tx.source_app || '—' },
             ...(memberName(tx.paid_by_member_id) ? [{ label: 'Paid by', value: memberName(tx.paid_by_member_id)! }] : []),
             ...(tx.note ? [{ label: 'Note', value: tx.note }] : []),
-            { label: 'Confidence', value: `${(tx.confidence_score * 100).toFixed(0)}%` },
-            { label: 'Raw Merchant', value: tx.merchant_name || '—' },
+            ...(tx.subscription_id != null ? [{ label: 'Recurring', value: 'Subscription charge' }] : []),
+            { label: 'Added on', value: formatDate(tx.created_at, 'DD MMM YYYY, hh:mm A') },
           ].map(({ label, value }) => (
             <View key={label} style={styles.detailRow}>
               <Text style={styles.detailLabel}>{label}</Text>
