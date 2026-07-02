@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "Ginti",
-    "slug": "cloud.firstanchor.ginti",
+    "slug": "cloudfirstanchorginti",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "trackerexpo",
+    "scheme": "ginti",
     "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash.png",
@@ -56,8 +56,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "23fcc434-5f10-4b46-9544-8eed01ce29f9"
+        "projectId": "539a3f82-120c-407d-96ae-da6caba6d576"
       }
-    }
+    },
+    "owner": "hgreatgupta231"
   }
 }
