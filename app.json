@@ -19,7 +19,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0A0A0A"
+      "backgroundColor": "#0A2118"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -31,7 +31,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#6C63FF"
+        "backgroundColor": "#134D3D"
       },
       "package": "cloud.firstanchor.ginti",
       "versionCode": 1,
@@ -53,7 +53,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#6C63FF"
+          "color": "#2E8B5A"
         }
       ],
       [

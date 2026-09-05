@@ -15,13 +15,16 @@ npm install
 ```
 
 ## 2. Brand assets (already generated)
-App icon, adaptive icon, splash, notification icon and Play store graphics are produced
-procedurally — regenerate any time with:
+App icon, adaptive icon, splash, notification icon and Play store graphics are derived from two
+source images in `assets/brand/` — `icon-source.png` (the wallet + leaf icon artwork) and
+`banner.png` (the marketing banner). Regenerate any time with:
 ```bash
-node scripts/generate-assets.js
+pip install Pillow                       # one-time
+python3 scripts/generate-assets.py
 ```
 Outputs: `assets/icon.png`, `assets/adaptive-icon.png`, `assets/splash.png`,
 `assets/notification-icon.png`, and `assets/play/` (512 icon + 1024×500 feature graphic).
+To change the brand, replace the two images in `assets/brand/` and rerun the script.
 
 ## 3. Run in development
 Ginti has no custom native modules, so the easiest path is a dev/preview build:
@@ -78,7 +81,7 @@ GenZ "log your spend" nudges (default 9am / 2pm / 10pm). They're re-queued on ev
 | `src/services/notifications.ts` | Local reminder scheduling |
 | `src/services/subscriptions.ts` | Recurring-charge processor |
 | `src/components/ui/LoadingSpinner.tsx` | Money-counting loader |
-| `scripts/generate-assets.js` | Procedural icon/splash/Play graphics |
+| `scripts/generate-assets.py` | Derives icon/splash/Play graphics from `assets/brand/` |
 
 > Zustand gotcha: store selectors must return **stable references** (don't `.map`/`.filter` inside a
 > selector) or screens re-render infinitely and freeze. Derive in render instead.
@@ -86,5 +89,5 @@ GenZ "log your spend" nudges (default 9am / 2pm / 10pm). They're re-queued on ev
 ## Useful commands
 ```bash
 npx tsc --noEmit     # type-check (≈9 env-only errors from expo typed-routes are expected)
-node scripts/generate-assets.js
+python3 scripts/generate-assets.py   # regenerate brand assets from assets/brand/
 ```
