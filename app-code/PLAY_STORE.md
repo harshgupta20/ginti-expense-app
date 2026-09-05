@@ -6,26 +6,27 @@ or require a decision from you; **✅ done** is already handled in this repo.
 ---
 
 ## 0. ⚠️ Critical: target API level (do this first)
-Google Play requires **new apps to target Android 15 (API level 35)**. This project is on **Expo SDK
-52**, which targets **API 34** — a Play upload will be **rejected** until the target is raised.
+Google Play now requires apps to target **Android 16 (API level 36)**. Play rejects uploads that
+target a lower level ("must target at least API level 36").
 
-**Recommended fix — upgrade the Expo SDK (handles API 35 + edge-to-edge correctly):**
+**Current fix (applied) — override via `expo-build-properties`:**
+```jsonc
+// app.json → expo.plugins  (already set)
+["expo-build-properties", { "android": { "compileSdkVersion": 36, "targetSdkVersion": 36 } }]
+```
+Then rebuild the AAB and upload it — the new bundle targets API 36:
 ```bash
-npx expo install expo@^53 --fix
+eas build -p android --profile production
+```
+
+**If the EAS build ever complains about compileSdk 36** (AGP tested only up to a lower level), the
+cleaner, fully-supported path is to upgrade the Expo SDK, which targets API 36 natively:
+```bash
+npx expo install expo@^54 --fix   # SDK 54 = Android 16 / API 36
 npx expo-doctor
 ```
-Then smoke-test every screen (edge-to-edge changes how status/nav bars overlay content).
-
-**Quick alternative (if you can't upgrade now):** add `expo-build-properties` and set the target,
-then test for content sliding under the system bars:
-```bash
-npx expo install expo-build-properties
-```
-```jsonc
-// app.json → expo.plugins
-["expo-build-properties", { "android": { "compileSdkVersion": 35, "targetSdkVersion": 35 } }]
-```
-Upgrading the SDK is the cleaner, supported path. Don't ship until the target is 35.
+Upgrading is a bigger change (RN bump) — smoke-test every screen afterwards. The override above is
+the minimal change and is what’s in place now.
 
 ---
 
