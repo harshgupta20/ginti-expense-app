@@ -59,7 +59,7 @@ function buildHTML(rows: (string | number)[][], title: string, total: number): s
   h1{font-size:20px;margin:0 0 4px} .sub{color:#666;font-size:13px;margin-bottom:16px}
   table{border-collapse:collapse;width:100%;font-size:13px}
   th,td{border:1px solid #ddd;padding:8px 10px;text-align:left}
-  th{background:#6C63FF;color:#fff} tr:nth-child(even){background:#f6f6fb}
+  th{background:#2E8B5A;color:#fff} tr:nth-child(even){background:#f1f8f4}
   td.num{text-align:right;font-variant-numeric:tabular-nums}
   tfoot td{font-weight:700;background:#eee}
 </style></head><body>

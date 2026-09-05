@@ -40,7 +40,7 @@ async function ensureAndroidChannel(): Promise<void> {
     name: 'Reminders',
     importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 200],
-    lightColor: '#6C63FF',
+    lightColor: '#2E8B5A',
   });
 }
 

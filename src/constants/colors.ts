@@ -1,14 +1,16 @@
 export const Colors = {
-  background: '#0A0A0A',
-  surface: '#141414',
-  card: '#1E1E1E',
-  cardElevated: '#262626',
-  border: '#2A2A2A',
-  borderLight: '#333333',
+  // Deep-forest dark neutrals — subtly green-tinted to match the Ginti brand.
+  background: '#0A1611',
+  surface: '#101E17',
+  card: '#16251D',
+  cardElevated: '#1E2E25',
+  border: '#26332B',
+  borderLight: '#2F3B33',
 
-  primary: '#6C63FF',
-  primaryDim: '#6C63FF22',
-  primaryLight: '#9C95FF',
+  // Brand green (the leaf/wallet mark). Same contrast profile as the old accent.
+  primary: '#2E8B5A',
+  primaryDim: '#2E8B5A22',
+  primaryLight: '#5AC08A',
 
   success: '#22C55E',
   successDim: '#22C55E22',
@@ -28,9 +30,9 @@ export const Colors = {
   transfer: '#3B82F6',
   cashback: '#F59E0B',
 
-  tabBar: '#111111',
-  tabBarBorder: '#1F1F1F',
-  tabActive: '#6C63FF',
+  tabBar: '#0D1B14',
+  tabBarBorder: '#182319',
+  tabActive: '#2E8B5A',
   tabInactive: '#6B7280',
 
   categoryColors: {
@@ -49,5 +51,5 @@ export const Colors = {
     Others: '#9CA3AF',
   } as Record<string, string>,
 
-  chart: ['#6C63FF', '#F97316', '#22C55E', '#EF4444', '#3B82F6', '#EC4899', '#F59E0B', '#10B981', '#A855F7', '#06B6D4', '#8B5CF6', '#14B8A6'],
+  chart: ['#2E8B5A', '#F97316', '#22C55E', '#EF4444', '#3B82F6', '#EC4899', '#F59E0B', '#10B981', '#A855F7', '#06B6D4', '#8B5CF6', '#14B8A6'],
 } as const;
