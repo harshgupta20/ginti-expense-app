@@ -1,10 +1,10 @@
 import { Hero } from '@/components/Hero';
 import { Stats } from '@/components/Stats';
+import { ScrollStory } from '@/components/ScrollStory';
 import { Features } from '@/components/Features';
-import { Showcase } from '@/components/Showcase';
-import { Steps } from '@/components/Steps';
 import { PrivacySection } from '@/components/PrivacySection';
-import { Pricing } from '@/components/Pricing';
+import { OpenSource } from '@/components/OpenSource';
+import { FreeSection } from '@/components/FreeSection';
 import { FAQ } from '@/components/FAQ';
 import { FinalCTA } from '@/components/FinalCTA';
 import { site } from '@/lib/content';
@@ -16,9 +16,11 @@ const jsonLd = {
   operatingSystem: 'Android',
   applicationCategory: 'FinanceApplication',
   description: site.description,
-  offers: { '@type': 'Offer', price: '0.99', priceCurrency: 'USD' },
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   url: site.url,
   downloadUrl: site.playUrl,
+  sameAs: [site.github],
   publisher: { '@type': 'Organization', name: site.company },
 };
 
@@ -28,11 +30,11 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Hero />
       <Stats />
+      <ScrollStory />
       <Features />
-      <Showcase />
-      <Steps />
       <PrivacySection />
-      <Pricing />
+      <OpenSource />
+      <FreeSection />
       <FAQ />
       <FinalCTA />
     </>

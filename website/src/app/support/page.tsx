@@ -40,7 +40,7 @@ export default function SupportPage() {
           </span>
           <div>
             <p className="text-sm font-semibold text-paper">Google Play</p>
-            <p className="text-sm text-cream/55">Reviews, refunds & updates</p>
+            <p className="text-sm text-cream/55">Reviews & updates</p>
           </div>
         </a>
       </div>

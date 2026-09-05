@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import { Reveal } from './Reveal';
 import { PlayBadge } from './PlayBadge';
+import { GitHubButton } from './GitHubButton';
 import { Aurora } from './Aurora';
-import { site } from '@/lib/content';
 
 export function FinalCTA() {
   return (
@@ -20,15 +20,13 @@ export function FinalCTA() {
               height={96}
               className="mx-auto h-20 w-20 rounded-3xl shadow-glow"
             />
-            <h2 className="mx-auto mt-8 max-w-2xl text-balance text-4xl font-bold tracking-tight text-paper sm:text-5xl">
-              Because your money is <span className="text-gradient">personal.</span>
+            <h2 className="mx-auto mt-8 max-w-2xl text-balance text-4xl font-bold tracking-tight text-paper sm:text-6xl">
+              Your money, <span className="text-gradient">quietly handled.</span>
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-lg text-cream/65">
-              Start counting today. {site.price}, once — and it’s yours for good.
-            </p>
+            <p className="mx-auto mt-5 max-w-md text-lg text-cream/60">Free, open source, and offline. Start counting.</p>
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <PlayBadge />
-              <span className="text-sm text-cream/50">{site.priceNote}</span>
+              <GitHubButton />
             </div>
           </div>
         </Reveal>

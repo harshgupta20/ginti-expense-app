@@ -39,7 +39,16 @@ export function Nav() {
             ))}
           </div>
 
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-2 md:flex">
+            <a
+              href={site.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Ginti on GitHub"
+              className="grid h-10 w-10 place-items-center rounded-full text-cream/70 transition-colors hover:bg-white/5 hover:text-paper"
+            >
+              <Icon name="github" className="h-5 w-5" />
+            </a>
             <a href={site.playUrl} target="_blank" rel="noopener noreferrer" className="btn-primary text-sm">
               Get Ginti
             </a>
@@ -69,6 +78,16 @@ export function Nav() {
                 {n.label}
               </Link>
             ))}
+            <a
+              href={site.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-cream/80 hover:bg-white/5"
+              onClick={() => setOpen(false)}
+            >
+              <Icon name="github" className="h-5 w-5" />
+              GitHub
+            </a>
             <a
               href={site.playUrl}
               target="_blank"

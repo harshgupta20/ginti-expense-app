@@ -23,21 +23,20 @@ export default function TermsPage() {
 
       <h2>2. Your licence</h2>
       <p>
-        Upon purchase through Google Play, {site.company} grants you a personal, non-exclusive, non-transferable licence
-        to install and use Ginti on devices you own or control, for your personal or internal business use. You may not:
+        Ginti is free and open-source software from {site.company}. You may install and use it on any device you own or
+        control. Your rights to the source code — including copying, modifying, and redistributing it — are governed by
+        the open-source licence published in the project’s{' '}
+        <a href={site.github} target="_blank" rel="noopener noreferrer">
+          GitHub repository
+        </a>
+        , which controls in the event of any conflict with these terms.
       </p>
-      <ul>
-        <li>copy, resell, sublicence, rent, or redistribute the app;</li>
-        <li>reverse-engineer, decompile, or attempt to extract the source code, except where the law expressly permits it;</li>
-        <li>remove or alter any proprietary notices.</li>
-      </ul>
 
-      <h2>3. Purchase and pricing</h2>
+      <h2>3. Price</h2>
       <p>
-        Ginti is a <strong>one-time purchase</strong> — there are no subscriptions, in-app purchases, or ads. All
-        payments, refunds, and taxes are handled by <strong>Google Play</strong> under Google’s terms. The price shown at
-        checkout is set in your local currency and may vary by region. Refund requests are subject to Google Play’s
-        refund policy.
+        Ginti is <strong>free</strong>. There are no purchases, subscriptions, in-app purchases, or ads. It is
+        distributed through Google Play and as a direct download (APK) from {site.domain}. Where you install via Google
+        Play, Google’s terms also apply.
       </p>
 
       <h2>4. Your data and backups</h2>

@@ -56,5 +56,6 @@ Brand assets are in `public/brand/`. The app-screen mockups are hand-built React
 
 ## Notes / placeholders to confirm
 - **Google Play URL** uses the real package id (`cloud.firstanchor.ginti`); it goes live once the app is published.
+- **GitHub repo** points to `github.com/harshgupta20/ginti-expense-app` (set in `src/lib/content.ts`).
 - **Contact email** is `hgupta427700@gmail.com` (from the app's privacy policy) — change in `content.ts` if you prefer a `@firstanchor.cloud` address.
-- **Price** is shown as “Under $1 / one-time”; the exact amount is whatever you set on Google Play.
+- The app is presented as **free & open source** throughout. All copy, links, features and FAQ live in `src/lib/content.ts`.

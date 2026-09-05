@@ -8,8 +8,8 @@ const cols = [
     heading: 'Product',
     links: [
       { label: 'Features', href: '/#features' },
-      { label: 'Pricing', href: '/#pricing' },
-      { label: 'FAQ', href: '/#faq' },
+      { label: 'Open source', href: '/#open' },
+      { label: 'Download APK', href: '/apk' },
       { label: 'Get it on Google Play', href: site.playUrl, external: true },
     ],
   },
@@ -30,15 +30,26 @@ export function Footer() {
         <div className="max-w-xs">
           <Logo />
           <p className="mt-4 text-sm leading-relaxed text-cream/55">
-            {site.nameDevanagari} — “to count.” A private, offline expense tracker. Your money, your device, your rules.
+            {site.nameDevanagari} — “to count.” A free, open-source, offline expense tracker. Your money, your device.
           </p>
-          <a
-            href={`mailto:${site.contactEmail}`}
-            className="mt-5 inline-flex items-center gap-2 text-sm text-leaf-300 hover:text-leaf-200"
-          >
-            <Icon name="mail" className="h-4 w-4" />
-            {site.contactEmail}
-          </a>
+          <div className="mt-5 flex items-center gap-3">
+            <a
+              href={site.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-cream/70 transition-colors hover:border-leaf-400/50 hover:text-paper"
+            >
+              <Icon name="github" className="h-[18px] w-[18px]" />
+            </a>
+            <a
+              href={`mailto:${site.contactEmail}`}
+              aria-label="Email"
+              className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-cream/70 transition-colors hover:border-leaf-400/50 hover:text-paper"
+            >
+              <Icon name="mail" className="h-[18px] w-[18px]" />
+            </a>
+          </div>
         </div>
 
         {cols.map((col) => (
@@ -71,9 +82,9 @@ export function Footer() {
       <div className="border-t border-white/6">
         <div className="container-x flex flex-col items-center justify-between gap-3 py-6 text-xs text-cream/40 sm:flex-row">
           <p>
-            © {new Date().getFullYear()} {site.company}. All rights reserved.
+            © {new Date().getFullYear()} {site.company} · Free &amp; open source
           </p>
-          <p>Made with care. No trackers were used in the making of this app.</p>
+          <p>No trackers were used in the making of this app.</p>
         </div>
       </div>
     </footer>
