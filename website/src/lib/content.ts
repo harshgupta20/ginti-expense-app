@@ -18,6 +18,13 @@ export const site = {
   effectiveDate: '28 June 2026',
 };
 
+export const apk = {
+  file: '/ginti-expense-app.apk',
+  version: '1.0.0',
+  size: '82 MB',
+  minAndroid: 'Android 7.0 and up',
+};
+
 export const nav = [
   { label: 'Features', href: '/#features' },
   { label: 'Privacy', href: '/#privacy' },
