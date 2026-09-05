@@ -25,7 +25,9 @@ export const nav = [
   { label: 'FAQ', href: '/#faq' },
 ];
 
-export const stats = [
+export type Stat = { value: number; label: string; prefix?: string; suffix?: string };
+
+export const stats: Stat[] = [
   { value: 0, suffix: '', label: 'Servers your data touches' },
   { value: 0, suffix: '', label: 'Trackers or ad SDKs' },
   { value: 100, suffix: '%', label: 'On-device & offline' },

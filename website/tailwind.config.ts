@@ -43,6 +43,14 @@ const config: Config = {
         '4xl': '2rem',
         '5xl': '2.5rem',
       },
+      // Extra opacity steps used across the UI (color/<n> modifiers).
+      opacity: {
+        6: '0.06',
+        8: '0.08',
+        12: '0.12',
+        15: '0.15',
+        45: '0.45',
+      },
       boxShadow: {
         glow: '0 0 80px -20px rgba(46,139,90,0.55)',
         'glow-sm': '0 0 40px -12px rgba(90,192,138,0.5)',
