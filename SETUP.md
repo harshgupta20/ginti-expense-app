@@ -1,4 +1,4 @@
-# Ginti — Setup Guide
+# Ginti — Setup Guide 
 
 Ginti (गिनती, "to count") is a **local-first, offline** expense tracker built with Expo / React
 Native. All data lives in an on-device SQLite database — no accounts, no servers, no analytics.
